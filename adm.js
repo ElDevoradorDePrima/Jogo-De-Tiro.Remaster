@@ -37,6 +37,19 @@ devPanel.innerHTML = `
         <input type="number" id="dev-level" style="width: 100%; background: #111; color: #0f0; border: 1px solid #0f0;">
     </div>
 
+    <div style="margin-bottom: 10px;">
+        <label>Combo Atual:</label><br>
+        <input type="number" id="dev-combo" style="width: 100%; background: #111; color: #0f0; border: 1px solid #0f0;">
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label>Spawn Inimigos (Qtd):</label><br>
+        <div style="display: flex; gap: 5px;">
+            <input type="number" id="dev-spawn-qtd" value="1" min="1" style="width: 60%; background: #111; color: #0f0; border: 1px solid #0f0;">
+            <button id="btn-spawn" style="width: 40%; background: #0f0; color: #000; border: none; cursor: pointer; font-weight: bold;">SPAWN</button>
+        </div>
+    </div>
+
     <div style="margin-bottom: 15px;">
         <label style="cursor: pointer;">
             <input type="checkbox" id="dev-nocd"> SEM COOLDOWN (Cheat)
@@ -71,8 +84,10 @@ function syncPanel() {
     document.getElementById('dev-speed').value = player.speed;
     document.getElementById('val-speed').innerText = player.speed;
     document.getElementById('dev-level').value = sistemaNivel.nivel;
+    document.getElementById('dev-combo').value = combo; // Sincroniza o combo
 }
 
+// Eventos de alteração dos inputs
 document.getElementById('dev-hp').addEventListener('input', (e) => {
     let val = parseInt(e.target.value);
     if(!isNaN(val)) {
@@ -95,6 +110,27 @@ document.getElementById('dev-level').addEventListener('input', (e) => {
     }
 });
 
+// --- LÓGICA DO COMBO ---
+document.getElementById('dev-combo').addEventListener('input', (e) => {
+    let val = parseInt(e.target.value);
+    if(!isNaN(val)) {
+        combo = val;
+        comboTimer = 180; // Dá um tempo de respiro para o combo não resetar na hora
+    }
+});
+
+// --- LÓGICA DO SPAWN DE INIMIGOS ---
+document.getElementById('btn-spawn').addEventListener('click', () => {
+    let qtd = parseInt(document.getElementById('dev-spawn-qtd').value);
+    if(!isNaN(qtd) && qtd > 0) {
+        for(let i = 0; i < qtd; i++) {
+            // Usa a classe Enemy já existente no script.js
+            enemies.push(new Enemy());
+        }
+    }
+});
+
+// Lógica de resfriamento infinito
 setInterval(() => {
     if (document.getElementById('dev-nocd').checked) {
         Object.keys(cooldowns).forEach(key => {
@@ -103,4 +139,5 @@ setInterval(() => {
     }
 }, 50);
 
+// Fechar painel
 document.getElementById('close-dev').onclick = () => devPanel.style.display = 'none';
