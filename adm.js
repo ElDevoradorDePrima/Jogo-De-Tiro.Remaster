@@ -1,4 +1,4 @@
-// adm.js - Painel de Desenvolvedor
+// adm.js - Painel de Desenvolvedor Completo
 
 // 1. Criar o HTML do Painel via JavaScript
 const devPanel = document.createElement('div');
@@ -14,9 +14,11 @@ devPanel.style = `
     font-family: 'Courier New', monospace; 
     z-index: 9999;
     display: none; 
-    width: 250px; 
+    width: 260px; 
     border-radius: 10px;
     box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+    max-height: 90vh;
+    overflow-y: auto;
 `;
 
 devPanel.innerHTML = `
@@ -38,6 +40,11 @@ devPanel.innerHTML = `
     </div>
 
     <div style="margin-bottom: 10px;">
+        <label>Kills:</label><br>
+        <input type="number" id="dev-kills" style="width: 100%; background: #111; color: #0f0; border: 1px solid #0f0;">
+    </div>
+
+    <div style="margin-bottom: 10px;">
         <label>Combo Atual:</label><br>
         <input type="number" id="dev-combo" style="width: 100%; background: #111; color: #0f0; border: 1px solid #0f0;">
     </div>
@@ -51,12 +58,18 @@ devPanel.innerHTML = `
     </div>
 
     <div style="margin-bottom: 15px;">
-        <label style="cursor: pointer;">
+        <button id="dev-kill-all" style="width: 100%; background: #ff0044; color: #fff; border: none; padding: 8px; cursor: pointer; font-weight: bold; text-shadow: 1px 1px black;">MATAR TODOS OS INIMIGOS</button>
+    </div>
+
+    <div style="margin-bottom: 15px; border-top: 1px solid #333; padding-top: 10px;">
+        <button id="dev-unlock-skills" style="width: 100%; background: #00d2ff; color: #000; border: none; padding: 5px; cursor: pointer; font-weight: bold; margin-bottom: 5px;">LIBERAR TODAS AS SKILLS</button>
+        
+        <label style="cursor: pointer; font-size: 12px; color: #0f0;">
             <input type="checkbox" id="dev-nocd"> SEM COOLDOWN (Cheat)
         </label>
     </div>
 
-    <button id="close-dev" style="width: 100%; background: #0f0; color: #000; border: none; padding: 5px; cursor: pointer; font-weight: bold;">FECHAR PANEL [ESC]</button>
+    <button id="close-dev" style="width: 100%; background: #444; color: #fff; border: none; padding: 5px; cursor: pointer; font-weight: bold;">FECHAR PANEL [ESC]</button>
 `;
 
 document.body.appendChild(devPanel);
@@ -78,22 +91,20 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// 3. Funções de Sincronização e Atualização
+// 3. Sincronização dos Dados
 function syncPanel() {
     document.getElementById('dev-hp').value = Math.floor(player.hp);
     document.getElementById('dev-speed').value = player.speed;
     document.getElementById('val-speed').innerText = player.speed;
     document.getElementById('dev-level').value = sistemaNivel.nivel;
-    document.getElementById('dev-combo').value = combo; // Sincroniza o combo
+    document.getElementById('dev-combo').value = combo; 
+    document.getElementById('dev-kills').value = player.kills;
 }
 
-// Eventos de alteração dos inputs
+// 4. Listeners de Alteração
 document.getElementById('dev-hp').addEventListener('input', (e) => {
     let val = parseInt(e.target.value);
-    if(!isNaN(val)) {
-        player.hp = val;
-        player.maxHp = val;
-    }
+    if(!isNaN(val)) { player.hp = val; player.maxHp = val; }
 });
 
 document.getElementById('dev-speed').addEventListener('input', (e) => {
@@ -110,34 +121,61 @@ document.getElementById('dev-level').addEventListener('input', (e) => {
     }
 });
 
-// --- LÓGICA DO COMBO ---
-document.getElementById('dev-combo').addEventListener('input', (e) => {
+document.getElementById('dev-kills').addEventListener('input', (e) => {
     let val = parseInt(e.target.value);
-    if(!isNaN(val)) {
-        combo = val;
-        comboTimer = 180; // Dá um tempo de respiro para o combo não resetar na hora
-    }
+    if(!isNaN(val)) player.kills = val;
 });
 
-// --- LÓGICA DO SPAWN DE INIMIGOS ---
+document.getElementById('dev-combo').addEventListener('input', (e) => {
+    let val = parseInt(e.target.value);
+    if(!isNaN(val)) { combo = val; comboTimer = 180; }
+});
+
+// --- LÓGICA DO SPAWN INTELIGENTE (LINHA ~105) ---
 document.getElementById('btn-spawn').addEventListener('click', () => {
     let qtd = parseInt(document.getElementById('dev-spawn-qtd').value);
+    const margemBorda = 50; 
+    const distMinima = 300; 
+
     if(!isNaN(qtd) && qtd > 0) {
         for(let i = 0; i < qtd; i++) {
-            // Usa a classe Enemy já existente no script.js
-            enemies.push(new Enemy());
+            let novoInimigo = new Enemy();
+            let posX, posY, dist;
+            let tentativas = 0;
+
+            do {
+                posX = margemBorda + Math.random() * (canvas.width - margemBorda * 2);
+                posY = margemBorda + Math.random() * (canvas.height - margemBorda * 2);
+                let dx = posX - player.x;
+                let dy = posY - player.y;
+                dist = Math.sqrt(dx * dx + dy * dy);
+                tentativas++;
+            } while (dist < distMinima && tentativas < 100);
+
+            novoInimigo.x = posX;
+            novoInimigo.y = posY;
+            enemies.push(novoInimigo);
         }
     }
 });
 
-// Lógica de resfriamento infinito
+// Matar todos
+document.getElementById('dev-kill-all').addEventListener('click', () => {
+    enemies.forEach(en => en.hp = 0);
+});
+
+// Liberar Skills
+document.getElementById('dev-unlock-skills').addEventListener('click', (e) => {
+    Object.keys(cooldowns).forEach(key => cooldowns[key].unlock = 1);
+    e.target.innerText = "SKILLS LIBERADAS!";
+    setTimeout(() => e.target.innerText = "LIBERAR TODAS AS SKILLS", 1500);
+});
+
+// Cheat Sem Cooldown
 setInterval(() => {
     if (document.getElementById('dev-nocd').checked) {
-        Object.keys(cooldowns).forEach(key => {
-            cooldowns[key].lastUsed = 0; 
-        });
+        Object.keys(cooldowns).forEach(key => cooldowns[key].lastUsed = 0);
     }
 }, 50);
 
-// Fechar painel
 document.getElementById('close-dev').onclick = () => devPanel.style.display = 'none';
