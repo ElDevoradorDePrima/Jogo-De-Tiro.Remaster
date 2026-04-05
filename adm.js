@@ -1,6 +1,3 @@
-// adm.js - Painel de Desenvolvedor Completo
-
-// 1. Criar o HTML do Painel via JavaScript
 const devPanel = document.createElement('div');
 devPanel.id = 'dev-menu';
 devPanel.style = `
@@ -78,7 +75,7 @@ document.body.appendChild(devPanel);
 window.addEventListener('keydown', (e) => {
     if (e.key === '\\') {
         const pass = prompt("MODO DESENVOLVEDOR: Digite a senha de acesso:");
-        if (pass === "eldevoradordeprima") {
+        if (pass === "risada1333") {
             devPanel.style.display = 'block';
             syncPanel(); 
         } else {
